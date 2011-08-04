@@ -11,8 +11,12 @@
 // interrupt disabled,spi enabled,msb 1st,master,clk low when idle,
 // sample on leading edge of clk,system clock/4 rate (fastest).
 // Enable the digital pins 11-13 for SPI (the MOSI,MISO,SPICLK)
-#include <Spi.h>
+#include <SPI.h>
 #include "Mcp23s17.h"
+
+// Note: You may need to take _RESET_ on the MCP23S17 low
+// for a few hundred ms and then take (and hold) it high
+// again before you begin to communicate with the chip.
 
 //---------- constructor ----------------------------------------------------
 
@@ -74,10 +78,10 @@ uint16_t MCP23S17::read_addr(byte addr)
   byte low_byte;
   byte high_byte;
   ::digitalWrite(slave_select_pin, LOW);
-  Spi.transfer(read_cmd);
-  Spi.transfer(addr);
-  low_byte  = Spi.transfer(0x0/*dummy data for read*/);
-  high_byte = Spi.transfer(0x0/*dummy data for read*/);
+  SPI.transfer(read_cmd);
+  SPI.transfer(addr);
+  low_byte  = SPI.transfer(0x0/*dummy data for read*/);
+  high_byte = SPI.transfer(0x0/*dummy data for read*/);
   ::digitalWrite(slave_select_pin, HIGH);
   return byte2uint16(high_byte,low_byte);
 }
@@ -85,10 +89,10 @@ uint16_t MCP23S17::read_addr(byte addr)
 void MCP23S17::write_addr(byte addr, uint16_t data)
 {
   ::digitalWrite(slave_select_pin, LOW);
-  Spi.transfer(write_cmd);
-  Spi.transfer(addr);
-  Spi.transfer(uint16_low_byte(data));
-  Spi.transfer(uint16_high_byte(data));
+  SPI.transfer(write_cmd);
+  SPI.transfer(addr);
+  SPI.transfer(uint16_low_byte(data));
+  SPI.transfer(uint16_high_byte(data));
   ::digitalWrite(slave_select_pin, HIGH);
 }
 
@@ -135,6 +139,4 @@ int MCP23S17::digitalRead(uint8_t pin)
 {
   (int)(read_addr(GPIO) & 1<<pin);
 }
-
-
 
