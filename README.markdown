@@ -22,9 +22,7 @@ Mcp23s17 is a simple object which mimics the typical Arduino functions for digit
 ### Requirements
 
 * The SPI version of this chip (NOT wire/I2C). [MCP23S17 Product Datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/21952b.pdf)
-* [Arduino Spi Library (by Cam Thompson)](http://www.arduino.cc/playground/Code/Spi)* 
-
-\* Other versions of Arduino Spi library (such as `SPI.h`) wont work / wernt tested.
+* [Arduino SPI Library](http://arduino.cc/en/Reference/SPI)* 
 
 ### Getting Started
 
@@ -36,4 +34,6 @@ Dreamcat4
 ### Credit
 
 * Mcp23s17 Version 1 - By Dreamcat4.
+* Mcp23s17 Version 2 (for the Arduino Reference SPI implementation) - By theJPster
+
 
