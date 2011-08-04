@@ -3,10 +3,9 @@
 
 // Download these into your Sketches/libraries/ folder...
 
-// The Spi library by Cam Thompson. It was originally part of FPU library (micromegacorp.com)
-// Available from http://arduino.cc/playground/Code/Fpu or http://www.arduino.cc/playground/Code/Spi
-// Including Spi.h vv below initializea the MOSI, MISO, and SPI_CLK pins as per ATMEGA 328P
-#include <Spi.h>
+// Load the Reference SPI library (http://arduino.cc/en/Reference/SPI)
+// Including SPI.h below initializes the MOSI, MISO, and SPI_CLK pins as per ATMEGA 328P
+#include <SPI.h>
 
 // Mcp23s17 library available from https://github.com/dreamcat4/Mcp23s17
 #include <Mcp23s17.h>
@@ -18,6 +17,8 @@
 
 // Then choose any other free pin as the Slave Select (pin 10 if the default but doesnt have to be)
 #define MCP23S17_SLAVE_SELECT_PIN  9 //arduino   <->   SPI Slave Select           -> CS  (Pin 11 on MCP23S17 DIP)
+// You may need to toggle the reset line once on startup
+#define MCP23S17_RESET_PIN         8 //arduino   <->   Device Reset               -> _RESET_ (Pin 18 on MCP23S17 DIP)
 
 // SINGLE DEVICE
 // Instantiate a single Mcp23s17 object
@@ -34,6 +35,16 @@ MCP23S17 Mcp23s17 = MCP23S17( MCP23S17_SLAVE_SELECT_PIN );
 void setup()
 {
   // Example usage
+
+  // Strobe reset
+  pinMode(MCP23S17_RESET_PIN, OUTPUT);
+  // I picked these delays at random. The datasheet suggests it could
+  // be much shorter than this, so experiment.
+  digitalWrite(MCP23S17_RESET_PIN, HIGH);
+  delay(250);
+  digitalWrite(MCP23S17_RESET_PIN, LOW);
+  delay(250);
+  digitalWrite(MCP23S17_RESET_PIN, HIGH);
 
   // Set all pins to be outputs (by default they are all inputs)
   Mcp23s17.pinMode(OUTPUT);
