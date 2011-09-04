@@ -22,12 +22,14 @@
 
 MCP23S17::MCP23S17(uint8_t slave_select_pin)
 {
+  SPI.begin();
   setup_ss(slave_select_pin);
   setup_device(0x00);
 }
 
 MCP23S17::MCP23S17(uint8_t slave_select_pin, byte aaa_hw_addr)
 {
+  SPI.begin();
   // Set the aaa hardware address for this chip by tying the 
   // MCP23S17's pins (A0, A1, and A2) to either 5v or GND.
   setup_ss(slave_select_pin);
