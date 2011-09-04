@@ -17,8 +17,6 @@
 
 // Then choose any other free pin as the Slave Select (pin 10 if the default but doesnt have to be)
 #define MCP23S17_SLAVE_SELECT_PIN  9 //arduino   <->   SPI Slave Select           -> CS  (Pin 11 on MCP23S17 DIP)
-// You may need to toggle the reset line once on startup
-#define MCP23S17_RESET_PIN         8 //arduino   <->   Device Reset               -> _RESET_ (Pin 18 on MCP23S17 DIP)
 
 // SINGLE DEVICE
 // Instantiate a single Mcp23s17 object
@@ -35,16 +33,6 @@ MCP23S17 Mcp23s17 = MCP23S17( MCP23S17_SLAVE_SELECT_PIN );
 void setup()
 {
   // Example usage
-
-  // Strobe reset
-  pinMode(MCP23S17_RESET_PIN, OUTPUT);
-  // I picked these delays at random. The datasheet suggests it could
-  // be much shorter than this, so experiment.
-  digitalWrite(MCP23S17_RESET_PIN, HIGH);
-  delay(250);
-  digitalWrite(MCP23S17_RESET_PIN, LOW);
-  delay(250);
-  digitalWrite(MCP23S17_RESET_PIN, HIGH);
 
   // Set all pins to be outputs (by default they are all inputs)
   Mcp23s17.pinMode(OUTPUT);
