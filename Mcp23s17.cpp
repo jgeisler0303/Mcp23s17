@@ -11,6 +11,7 @@
 // interrupt disabled,spi enabled,msb 1st,master,clk low when idle,
 // sample on leading edge of clk,system clock/4 rate (fastest).
 // Enable the digital pins 11-13 for SPI (the MOSI,MISO,SPICLK)
+#include <Wire.h>
 #include <SPI.h>
 #include "Mcp23s17.h"
 
@@ -20,14 +21,16 @@
 
 //---------- constructor ----------------------------------------------------
 
-MCP23S17::MCP23S17(uint8_t slave_select_pin)
+MCP23S17::MCP23S17(uint8_t slave_select_pin, bool cacheMode_= false)
 {
   SPI.begin();
   setup_ss(slave_select_pin);
   setup_device(0x00);
+  write_addr(IOCON, 0);
+  setup_cache(cacheMode_);
 }
 
-MCP23S17::MCP23S17(uint8_t slave_select_pin, byte aaa_hw_addr)
+MCP23S17::MCP23S17(uint8_t slave_select_pin, byte aaa_hw_addr, bool cacheMode_= false)
 {
   SPI.begin();
   // Set the aaa hardware address for this chip by tying the 
@@ -36,10 +39,12 @@ MCP23S17::MCP23S17(uint8_t slave_select_pin, byte aaa_hw_addr)
 
   // We enable HAEN on all connected devices before we can address them individually
   setup_device(0x00);
-  write_addr(IOCON, read_addr(IOCON)|HAEN);
+  //write_addr(IOCON, read_addr(IOCON)|HAEN);
+  write_addr(IOCON, HAEN);
 
   // Remember the hardware address for this chip
   setup_device(aaa_hw_addr);
+  setup_cache(cacheMode_);
 }
 
 //------------------ protected -----------------------------------------------
@@ -49,9 +54,9 @@ uint16_t MCP23S17::byte2uint16(byte high_byte, byte low_byte)
   return (uint16_t)high_byte<<8 | (uint16_t)low_byte;
 }
 
-byte MCP23S17::uint16_high_byte(uint16_t uint16)
+uint8_t MCP23S17::uint16_high_byte(uint16_t uint16)
 {
-  return (byte)(uint16>>8);
+  return (uint16>>8);
 }
 
 byte MCP23S17::uint16_low_byte(uint16_t uint16)
@@ -73,6 +78,19 @@ void MCP23S17::setup_device(uint8_t aaa_hw_addr)
   this->read_cmd  = B01000000 | aaa_hw_addr<<1 | 1<<0; // MCP23S17_READ  = B0100AAA1 
   this->write_cmd = B01000000 | aaa_hw_addr<<1 | 0<<0; // MCP23S17_WRITE = B0100AAA0
   // write_addr(IOCON, read_addr(IOCON)|SEQOP); // no need to enable SEQOP if BANK=0
+}
+
+void MCP23S17::setup_cache(bool cacheMode_)
+{
+  cacheMode= cacheMode_;
+  if(cacheMode) {
+    // cacheDIR= read_addr(IODIR);
+    // cacheGPIO= read_addr(GPIO);
+    // cacheGPPU= read_addr(GPPU);
+    cacheDIR= 0xFFFF;
+    cacheGPIO= 0x0000;
+    cacheGPPU= 0x0000;
+  }
 }
 
 uint16_t MCP23S17::read_addr(byte addr)
@@ -102,18 +120,83 @@ void MCP23S17::write_addr(byte addr, uint16_t data)
 
 void MCP23S17::pinMode(bool mode)
 {
-  uint16_t input_pins;
-  if(mode == INPUT)
-    input_pins = 0xFFFF;
+  if(mode)
+    cacheDIR = 0xFFFF;
   else
-    input_pins = 0x0000;
+    cacheDIR = 0x0000;
 
-  write_addr(IODIR, input_pins);
+  write_addr(IODIR, cacheDIR);
+}
+
+void MCP23S17::pinMode(uint16_t mode)
+{
+  write_addr(IODIR, mode);
+  cacheDIR= mode;
+}
+
+uint16_t MCP23S17::pinMode() {
+  return read_addr(IODIR);
+}
+
+void MCP23S17::pullupMode(bool mode)
+{
+  if(mode)
+    cacheGPPU = 0xFFFF;
+  else
+    cacheGPPU = 0x0000;
+
+  write_addr(GPPU, cacheGPPU);
+}
+
+void MCP23S17::pullupMode(uint8_t pin, bool mode)
+{
+  if(!cacheMode)
+    cacheGPPU= read_addr(GPPU);
+  if(mode)
+    cacheGPPU|= 1<<pin;
+  else
+    cacheGPPU&= ~((uint16_t)1<<pin);
+    
+  write_addr(GPPU, cacheGPPU);
+}
+
+void MCP23S17::pullupModeD(uint8_t pin, bool mode)
+{
+  if(mode)
+    cacheGPPU|= 1<<pin;
+  else
+   cacheGPPU&= ~((uint16_t)1<<pin);
+ }
+void MCP23S17::applyPullupMode()
+{
+  write_addr(GPPU, cacheGPPU);
+}
+
+void MCP23S17::pullupMode(uint16_t mode)
+{
+  write_addr(GPPU, mode);
+  cacheGPPU= mode;
 }
 
 void MCP23S17::port(uint16_t value)
 {
   write_addr(GPIO,value);
+  cacheGPIO= value;
+}
+
+void MCP23S17::port(uint8_t value, uint8_t AB) {
+  if(!cacheMode)
+    cacheGPIO= read_addr(GPIO);
+    
+  if(AB!=0) {
+    cacheGPIO&= 0x00FF;
+    cacheGPIO|= ((uint16_t)value)<<8;
+  } else {
+    cacheGPIO&= 0xFF00;
+    cacheGPIO|= value;
+  }
+  
+  write_addr(GPIO, cacheGPIO);  
 }
 
 uint16_t MCP23S17::port()
@@ -123,22 +206,58 @@ uint16_t MCP23S17::port()
 
 void MCP23S17::pinMode(uint8_t pin, bool mode)
 {
-  if(mode == INPUT)
-    write_addr(IODIR, read_addr(IODIR) | 1<<pin );
+  if(!cacheMode)
+    cacheDIR= read_addr(IODIR);
+    
+  if(mode)
+    cacheDIR|= 1<<pin;
   else
-    write_addr(IODIR, read_addr(IODIR) & ~(1<<pin) );
+    cacheDIR&= ~((uint16_t)1<<pin);
+    
+  write_addr(IODIR, cacheDIR);
+}
+
+void MCP23S17::pinModeD(uint8_t pin, bool mode)
+{
+  if(mode)
+    cacheDIR|= 1<<pin;
+  else
+    cacheDIR&= ~((uint16_t)1<<pin);
+}
+
+void MCP23S17::applyPinMode()
+{
+  write_addr(IODIR, cacheDIR);
 }
 
 void MCP23S17::digitalWrite(uint8_t pin, bool value)
 {
+  if(!cacheMode)
+    cacheGPIO= read_addr(GPIO);
+    
   if(value)
-    write_addr(GPIO, read_addr(GPIO) | 1<<pin );  
+    cacheGPIO|= 1<<pin;
   else
-    write_addr(GPIO, read_addr(GPIO) & ~(1<<pin) );  
+    cacheGPIO&= ~((uint16_t)1<<pin);
+    
+  write_addr(GPIO, cacheGPIO);
 }
 
-int MCP23S17::digitalRead(uint8_t pin)
+void MCP23S17::digitalWriteD(uint8_t pin, bool value)
 {
-  (int)(read_addr(GPIO) & 1<<pin);
+  if(value)
+    cacheGPIO|= 1<<pin;
+  else
+    cacheGPIO&= ~((uint16_t)1<<pin);
+}
+
+void MCP23S17::applyDigitalWrite()
+{    
+  write_addr(GPIO, cacheGPIO);
+}
+
+uint8_t MCP23S17::digitalRead(uint8_t pin)
+{
+  return read_addr(GPIO)>>pin & 1;
 }
 

@@ -5,23 +5,48 @@
 #ifndef Mcp23s17_h
 #define Mcp23s17_h
 
+#include <inttypes.h>
+#if defined(ARDUINO) && ARDUINO >= 100
+
+#include "Arduino.h"
+
+#else
+#include "WProgram.h"
+
+#endif
+
+
 class MCP23S17
 {
   public:
     // You must set specify the slave select pin
-    MCP23S17(uint8_t slave_select);
+    MCP23S17(uint8_t slave_select, bool cacheMode);
     // Optionally, up to 8 devices can share the same slave select pin
-    MCP23S17(uint8_t slave_select, byte aaa_hw_addr);
+    MCP23S17(uint8_t slave_select, byte aaa_hw_addr, bool cacheMode);
 
     // GPIO 16-bit Combined Port (GPIO A0-A7 + GPIO B0-B7)
     void pinMode(bool mode);
+    void pinMode(uint16_t mode);
+    
+    void pullupMode(uint8_t pin, bool mode);       // Selects internal 100k input pull-up of a single I/O pin
+    void pullupModeD(uint8_t pin, bool mode);       // Selects internal 100k input pull-up of a single I/O pin    
+    void applyPullupMode();
+    void pullupMode(uint16_t mode);           // Selects internal 100k input pull-up of all I/O pins at once
+    void pullupMode(bool mode);           // Selects internal 100k input pull-up of all I/O pins at once
+    
     void port(uint16_t value);
+    void port(uint8_t value, uint8_t AB);
     uint16_t port();
 
     // Work on individual pins 0-15
     void pinMode(uint8_t pin, bool mode);
+    void pinModeD(uint8_t pin, bool mode);
+    void applyPinMode();
     void digitalWrite(uint8_t pin, bool value);
-    int  digitalRead(uint8_t pin);
+    void digitalWriteD(uint8_t pin, bool value);
+    void applyDigitalWrite();
+    uint8_t  digitalRead(uint8_t pin);
+	uint16_t pinMode();
 
     // Public Constants
     const static uint8_t GPIO_A0 = 0;
@@ -76,6 +101,9 @@ class MCP23S17
     // As BANK=0, Register addresses are therefore mapped per
     // "TABLE 1-6:  CONTROL REGISTER SUMMARY (IOCON.BANK = 0)"
 
+    //const static uint8_t OUTPUT = 0x00;
+    //const static uint8_t INPUT = 0x01;
+    
     const static uint8_t IODIRA = 0x00;
     const static uint8_t IODIRB = 0x01;
     const static uint8_t IODIR  = IODIRA;
@@ -93,9 +121,15 @@ class MCP23S17
 
     byte read_cmd;
     byte write_cmd;
+    
+    bool cacheMode;
+    uint16_t cacheDIR;
+    uint16_t cacheGPIO;
+    uint16_t cacheGPPU;
 
     void setup_ss(uint8_t slave_select_pin);
     void setup_device(uint8_t aaa_hw_addr);
+    void setup_cache(bool cacheMode_);
 
     uint16_t read_addr(byte addr);
     void write_addr(byte addr, uint16_t data);

@@ -17,7 +17,7 @@ Mcp23s17 is a simple object which mimics the typical Arduino functions for digit
 * Single-pin commands `obj.pinMode()`, `obj.digitalRead()`, `obj.digitalWrite()`
 * As this is 16-bit IO expander, then 16-bit addressing with uint16_t datatype
 * `obj.port()` to read or write to both ports at once.
-* No methods for the 2x 8-bit ports individually (not needed).
+* Methods for the 2x 8-bit ports individually.
 
 ### Requirements
 
@@ -35,5 +35,6 @@ Dreamcat4
 
 * Mcp23s17 Version 1 - By Dreamcat4.
 * Mcp23s17 Version 2 (for the Arduino Reference SPI implementation) - By theJPster
+* Mcp23s17 Version 3 updated to work with Arduino 1.0 IDE, added optional cached mode to avoid reading when writing, added methods for deferred writing - By JGeisler
 
 
