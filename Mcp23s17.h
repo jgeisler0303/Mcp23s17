@@ -46,6 +46,7 @@ class MCP23S17
     void digitalWriteD(uint8_t pin, bool value);
     void applyDigitalWrite();
     uint8_t  digitalRead(uint8_t pin);
+    uint16_t  digitalRead();
 	uint16_t pinMode();
 
     // Public Constants

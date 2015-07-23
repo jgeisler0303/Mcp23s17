@@ -11,7 +11,7 @@
 // interrupt disabled,spi enabled,msb 1st,master,clk low when idle,
 // sample on leading edge of clk,system clock/4 rate (fastest).
 // Enable the digital pins 11-13 for SPI (the MOSI,MISO,SPICLK)
-#include <Wire.h>
+
 #include <SPI.h>
 #include "Mcp23s17.h"
 
@@ -121,21 +121,21 @@ void MCP23S17::write_addr(byte addr, uint16_t data)
 void MCP23S17::pinMode(bool mode)
 {
   if(mode)
-    cacheDIR = 0xFFFF;
-  else
     cacheDIR = 0x0000;
+  else
+    cacheDIR = 0xFFFF;
 
   write_addr(IODIR, cacheDIR);
 }
 
 void MCP23S17::pinMode(uint16_t mode)
 {
-  write_addr(IODIR, mode);
-  cacheDIR= mode;
+  write_addr(IODIR, ~mode);
+  cacheDIR= ~mode;
 }
 
 uint16_t MCP23S17::pinMode() {
-  return read_addr(IODIR);
+  return  ~read_addr(IODIR);
 }
 
 void MCP23S17::pullupMode(bool mode)
@@ -210,9 +210,9 @@ void MCP23S17::pinMode(uint8_t pin, bool mode)
     cacheDIR= read_addr(IODIR);
     
   if(mode)
-    cacheDIR|= 1<<pin;
-  else
     cacheDIR&= ~((uint16_t)1<<pin);
+   else
+    cacheDIR|= 1<<pin;
     
   write_addr(IODIR, cacheDIR);
 }
@@ -220,9 +220,9 @@ void MCP23S17::pinMode(uint8_t pin, bool mode)
 void MCP23S17::pinModeD(uint8_t pin, bool mode)
 {
   if(mode)
-    cacheDIR|= 1<<pin;
-  else
     cacheDIR&= ~((uint16_t)1<<pin);
+  else
+    cacheDIR|= 1<<pin;
 }
 
 void MCP23S17::applyPinMode()
@@ -261,3 +261,7 @@ uint8_t MCP23S17::digitalRead(uint8_t pin)
   return read_addr(GPIO)>>pin & 1;
 }
 
+uint16_t MCP23S17::digitalRead()
+{
+  return read_addr(GPIO);
+}
